@@ -1,0 +1,27 @@
+services:
+  # Redis for Semantic and Exact Caching
+  redis:
+    image: redis:7-alpine
+    container_name: litellm-redis
+    restart: always
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis_data:/data
+
+  # LiteLLM Proxy
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: litellm-proxy
+    restart: always
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./litellm-config.yaml:/app/config.yaml
+    env_file:
+      - .env
+    depends_on:
+      - redis
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+
+volumes:
+  redis_data:

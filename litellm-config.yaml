@@ -1,0 +1,77 @@
+model_list:
+  - model_name: gemini-3-pro
+    litellm_params:
+      model: gemini/gemini-3-pro-preview
+      api_key: os.environ/GEMINI_API_KEY
+      rpm: 10          # Giới hạn 10 yêu cầu/phút
+      tpm: 250000      # Giới hạn 250k tokens/phút
+      rpd: 100         # Giới hạn 100 yêu cầu/ngày (LiteLLM v1.70+)
+      thinking_level: high
+  
+  - model_name: gemini-3-flash
+    litellm_params:
+      model: gemini/gemini-3-flash-preview
+      api_key: os.environ/GEMINI_API_KEY
+      rpm: 15          # Flash thường có RPM cao hơn Pro một chút
+      tpm: 1000000     # Flash có hạn mức Token cao hơn để xử lý nhanh
+      rpd: 1500
+      thinking_level: medium
+
+
+  - model_name: grok-code
+    litellm_params:
+      model: xai/grok-code-fast
+      api_key: os.environ/XAI_API_KEY
+      rpm: 10          # Hạn mức thử nghiệm cho Free Tier
+      tpm: 100000      # Grok Code thường có TPM thấp hơn bản Flash
+      rpd: 50          # Giới hạn yêu cầu mỗi ngày cho bản Code
+      
+  # Model lập luận mạnh nhất (Best for Complex Debugging/Architecture)
+  - model_name: grok-4.1-reasoning
+    litellm_params:
+      model: xai/grok-4.1-fast-reasoning
+      api_key: os.environ/XAI_API_KEY
+      rpm: 5           # Model reasoning tiêu tốn nhiều tài nguyên hơn
+      tpm: 250000      
+      rpd: 100         
+      # Grok dùng tham số reasoning_enabled thay vì thinking_level của Gemini
+      extra_body:
+        reasoning_enabled: true
+
+  # Model dự phòng tốc độ cao (General Purpose)
+  - model_name: grok-4.1-fast
+    litellm_params:
+      model: xai/grok-4.1-fast-non-reasoning
+      api_key: os.environ/XAI_API_KEY
+      rpm: 15          
+      tpm: 1000000     
+      rpd: 500
+
+  - model_name: z-ai-coding
+    litellm_params:
+      model: zai/glm-4.7
+      api_key: os.environ/ZAI_API_KEY
+
+router_settings:
+  routing_strategy: usage-based-routing 
+  enable_pre_call_checks: true          
+  num_retries: 3
+  fallbacks: 
+    - gemini-3-pro: ["grok-4.1-reasoning", "gemini-3-flash", "grok-code", "z-ai-coding"]
+    - grok-4.1-reasoning: ["gemini-3-pro", "gemini-3-flash"]
+
+
+litellm_settings:
+  # Enable Caching via the Redis container
+  cache: True
+  cache_params:
+    type: "redis"
+    host: "redis"
+    port: 6379
+  
+  # Budgeting: Stop all calls once we hit $10 in 7 days
+  max_budget: 10
+  budget_duration: "7d"
+
+general_settings:
+  master_key: "os.environ/LITELLM_MASTER_KEY"
