@@ -15,7 +15,7 @@ model_list:
       rpm: 15          # Flash thường có RPM cao hơn Pro một chút
       tpm: 1000000     # Flash có hạn mức Token cao hơn để xử lý nhanh
       rpd: 1500
-      thinking_level: medium
+      thinking_level: low
 
 
   - model_name: grok-code
